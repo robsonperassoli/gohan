@@ -1,0 +1,5 @@
+CREATE TABLE IF NOT EXISTS objects (
+    id VARCHAR(40) PRIMARY KEY,
+    type VARCHAR(100) NOT NULL,
+    display VARCHAR(200) NOT NULL
+);

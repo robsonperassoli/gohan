@@ -1,47 +1,44 @@
 package main
 
 import (
-	"fmt"
-	"time"
+	"log"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/jmoiron/sqlx"
+	"github.com/vrischmann/envconfig"
+
+	_ "github.com/lib/pq"
 )
 
-type Object struct {
-	Key     string `json:"key"`
-	Type    string `json:"type"`
-	Display string `json:"display"`
+var conf struct {
+	DB struct {
+		URL string `envconfig:"default=postgresql://postgres:postgres@localhost/gohan?sslmode=disable"`
+	}
 }
 
-type Event struct {
-	Timestamp time.Time `json:"timestamp"`
-
-	Verb string `json:"verb"`
-
-	Direct        Object `json:"direct"`
-	Indirect      Object `json:"indirect"`
-	Prepositional Object `json:"prepositional"`
-
-	Context string `json:"context"`
-}
-
-func handlePostEvents(c *fiber.Ctx) error {
-	events := new([]Event)
-	err := c.BodyParser(&events)
+func MustConnectDB(connString string) *sqlx.DB {
+	db, err := sqlx.Connect("postgres", connString)
 	if err != nil {
-		return fiber.ErrUnprocessableEntity
+		log.Fatal("Could not connect to database", err)
 	}
 
-	fmt.Println(events)
-
-	c.Status(fiber.StatusCreated)
-	return nil
+	return db
 }
 
 func main() {
-	app := fiber.New()
+	if err := envconfig.Init(&conf); err != nil {
+		log.Fatalln(err)
+	}
 
-	app.Post("/events", handlePostEvents)
+	db := MustConnectDB(conf.DB.URL)
 
-	app.Listen(":4100")
+	app := fiber.New(fiber.Config{
+		ErrorHandler: HandleError,
+	})
+
+	app.Post("/events", func(c *fiber.Ctx) error {
+		return HandlePostEvents(c, db)
+	})
+
+	log.Fatal(app.Listen(":4100"))
 }
