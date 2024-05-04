@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 
 	"github.com/gofiber/fiber/v2"
@@ -14,6 +15,7 @@ var conf struct {
 	DB struct {
 		URL string `envconfig:"default=postgresql://postgres:postgres@localhost/gohan?sslmode=disable"`
 	}
+	PORT string `envconfig:"default=4100"`
 }
 
 func MustConnectDB(connString string) *sqlx.DB {
@@ -40,5 +42,6 @@ func main() {
 		return HandlePostEvents(c, db)
 	})
 
-	log.Fatal(app.Listen(":4100"))
+	addr := fmt.Sprintf(":%s", conf.PORT)
+	log.Fatal(app.Listen(addr))
 }
