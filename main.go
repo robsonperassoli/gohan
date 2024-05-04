@@ -5,6 +5,7 @@ import (
 	"log"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/recover"
 	"github.com/jmoiron/sqlx"
 	"github.com/vrischmann/envconfig"
 
@@ -37,9 +38,15 @@ func main() {
 	app := fiber.New(fiber.Config{
 		ErrorHandler: HandleError,
 	})
+	app.Static("/", "./public")
+	app.Use(recover.New())
 
 	app.Post("/events", func(c *fiber.Ctx) error {
 		return HandlePostEvents(c, db)
+	})
+
+	app.Get("/", func(c *fiber.Ctx) error {
+		return HandleHome(c)
 	})
 
 	addr := fmt.Sprintf(":%s", conf.PORT)

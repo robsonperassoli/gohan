@@ -2,9 +2,12 @@ package main
 
 import (
 	"gohan/repo"
+	"gohan/views"
 	"log"
 
+	"github.com/a-h/templ"
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/adaptor"
 	"github.com/jmoiron/sqlx"
 )
 
@@ -32,6 +35,11 @@ func HandleError(c *fiber.Ctx, err error) error {
 		Success: false,
 		Message: err.Error(),
 	})
+}
+
+func HandleHome(c *fiber.Ctx) error {
+	handler := adaptor.HTTPHandler(templ.Handler(views.Home()))
+	return handler(c)
 }
 
 func HandlePostEvents(c *fiber.Ctx, db *sqlx.DB) error {
