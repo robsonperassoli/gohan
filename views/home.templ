@@ -1,7 +1,34 @@
 package views
 
-templ Home() {
+import "gohan/repo"
+import "time"
+
+templ object(id string, objType string, display string) {
+	<a href={ "/objects/" + templ.SafeURL(id) }>
+		<span class="px-2 py-1 bg-gray-200 border border-gray-300 rounded-md cursor-pointer">
+			<span class="capitalize font-medium">{ objType }</span>
+			{ display }
+		</span>
+	</a>
+}
+
+templ Home(events []repo.Event) {
 	@Layout() {
-		<div class="bg-gray-200">Home</div>
+		<table class="table-auto">
+			<tbody>
+				for _, event := range events {
+					<tr>
+						<td class="px-3 py-2">{ event.Timestamp.Format(time.Stamp) }</td>
+						<td class="px-3 py-2">
+							@object(event.Subject.ID, event.Subject.Type, event.Subject.Display)
+						</td>
+						<td class="px-3 py-2 capitalize">{ event.Verb }</td>
+						<td class="px-3 py-2">
+							@object(event.Direct.ID, event.Direct.Type, event.Direct.Display)
+						</td>
+					</tr>
+				}
+			</tbody>
+		</table>
 	}
 }

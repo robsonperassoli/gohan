@@ -3,10 +3,12 @@ package main
 import (
 	"fmt"
 	"log"
+	"strings"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/recover"
 	"github.com/jmoiron/sqlx"
+	"github.com/jmoiron/sqlx/reflectx"
 	"github.com/vrischmann/envconfig"
 
 	_ "github.com/lib/pq"
@@ -25,6 +27,8 @@ func MustConnectDB(connString string) *sqlx.DB {
 		log.Fatal("Could not connect to database", err)
 	}
 
+	db.Mapper = reflectx.NewMapperFunc("json", strings.ToLower)
+
 	return db
 }
 
@@ -41,12 +45,16 @@ func main() {
 	app.Static("/", "./public")
 	app.Use(recover.New())
 
+	app.Get("/", func(c *fiber.Ctx) error {
+		return HandleHome(c, db)
+	})
+
 	app.Post("/events", func(c *fiber.Ctx) error {
 		return HandlePostEvents(c, db)
 	})
 
-	app.Get("/", func(c *fiber.Ctx) error {
-		return HandleHome(c)
+	app.Get("/objects/:id", func(c *fiber.Ctx) error {
+		return HandleGetObjectById(c, db)
 	})
 
 	addr := fmt.Sprintf(":%s", conf.PORT)

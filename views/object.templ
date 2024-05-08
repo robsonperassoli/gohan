@@ -1,0 +1,11 @@
+package views
+
+import "gohan/repo"
+
+templ Object(obj repo.Object) {
+	@Layout() {
+		<div>
+			{ obj.Type } { obj.Display }
+		</div>
+	}
+}
