@@ -2,6 +2,7 @@ package repo
 
 import (
 	"database/sql"
+	"fmt"
 	"time"
 
 	"github.com/google/uuid"
@@ -26,6 +27,11 @@ type Event struct {
 	Indirect      *Object   `json:"indirect"`
 	Prepositional *Object   `json:"prepositional"`
 	Context       string    `json:"context"`
+}
+
+type ListFilters struct {
+	ObjectIDs []string
+	Verb      string
 }
 
 func NewNullString(s string) sql.NullString {
@@ -56,8 +62,21 @@ func InsertEvent(db *sqlx.DB, params CreateEventParams) error {
 	return err
 }
 
-func ListEvents(db *sqlx.DB) ([]Event, error) {
-	query := `SELECT
+func ListEvents(db *sqlx.DB, filters ListFilters) ([]Event, error) {
+	where := "where true"
+	args := []interface{}{}
+
+	if filters.Verb != "" {
+		where += " and verb = ?"
+		args = append(args, filters.Verb)
+	}
+
+	if len(filters.ObjectIDs) > 0 {
+		where += " and (direct_object_id in (?) or indirect_object_id in (?) or prepositional_object_id in (?) or subject_id in (?))"
+		args = append(args, filters.ObjectIDs, filters.ObjectIDs, filters.ObjectIDs, filters.ObjectIDs)
+	}
+
+	query := fmt.Sprintf(`SELECT
 		e.id, e.timestamp, e.verb, e.context,
 		subject.id, subject.type, subject.display,
 		direct.id, direct.type, direct.display,
@@ -69,10 +88,13 @@ func ListEvents(db *sqlx.DB) ([]Event, error) {
 	INNER JOIN objects direct on direct.id = e.direct_object_id
 	LEFT JOIN objects indirect on indirect.id = e.indirect_object_id
 	LEFT JOIN objects prepositional on prepositional.id = e.prepositional_object_id
+	%s
 	ORDER BY
-		e.timestamp desc`
+		e.timestamp desc`, where)
 
-	rows, err := db.Queryx(query)
+	query, args, err := sqlx.In(query, args...)
+	query = db.Rebind(query)
+	rows, err := db.Query(query, args...)
 
 	if err != nil {
 		return nil, err

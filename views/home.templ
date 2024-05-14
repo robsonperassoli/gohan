@@ -1,34 +1,75 @@
 package views
 
 import "gohan/repo"
-import "time"
 
 templ object(id string, objType string, display string) {
-	<a href={ "/objects/" + templ.SafeURL(id) }>
-		<span class="px-2 py-1 bg-gray-200 border border-gray-300 rounded-md cursor-pointer">
+	<a
+		href={ "/objects/" + templ.SafeURL(id) }
+		hx-get={ "/?object_ids=" + id }
+		hx-push-url="true"
+		hx-target="body"
+		class="inline-block"
+	>
+		<span class="px-2 py-1 hover:bg-gray-100 rounded-md cursor-pointer inline-block text-sm hover:underline">
 			<span class="capitalize font-medium">{ objType }</span>
 			{ display }
 		</span>
 	</a>
 }
 
-templ Home(events []repo.Event) {
+templ Home(events []repo.Event, verb string, objects []repo.Object) {
 	@Layout() {
-		<table class="table-auto">
-			<tbody>
-				for _, event := range events {
-					<tr>
-						<td class="px-3 py-2">{ event.Timestamp.Format(time.Stamp) }</td>
-						<td class="px-3 py-2">
-							@object(event.Subject.ID, event.Subject.Type, event.Subject.Display)
-						</td>
-						<td class="px-3 py-2 capitalize">{ event.Verb }</td>
-						<td class="px-3 py-2">
-							@object(event.Direct.ID, event.Direct.Type, event.Direct.Display)
-						</td>
-					</tr>
+		<h2 class="text-2xl font-medium pb-4">Event Stream</h2>
+		@Box() {
+			<div class="space-y-6">
+				if verb != "" || len(objects) > 0 {
+					<div class="flex items-center gap-x-4">
+						<span class="text-gray-700 font-medium">Filtered by: </span>
+						for _, obj := range objects {
+							@object(obj.ID, obj.Type, obj.Display)
+						}
+						if verb != "" {
+							<span class="capitalize">
+								<span class="font-medium">Verb</span> { verb }
+							</span>
+						}
+						<button
+							type="button"
+							class="text-sm underline text-blue-600"
+							hx-get="/"
+							hx-push-url="true"
+							hx-target="body"
+						>
+							Clear
+						</button>
+					</div>
 				}
-			</tbody>
-		</table>
+				<table class="w-full">
+					<tbody>
+						for _, event := range events {
+							<tr class="border-b">
+								<td class="px-3 py-2 italic text-sm text-gray-500 text-right w-40">{ event.Timestamp.Format("02 Jan 06 15:04:05") }</td>
+								<td class="px-3 py-1.5">
+									@object(event.Subject.ID, event.Subject.Type, event.Subject.Display)
+								</td>
+								<td class="px-3 py-2 capitalize">
+									<a
+										hx-get={ "/?verb=" + event.Verb }
+										hx-push-url="true"
+										hx-target="body"
+										class="cursor-pointer"
+									>
+										{ event.Verb }
+									</a>
+								</td>
+								<td class="px-3 py-1.5">
+									@object(event.Direct.ID, event.Direct.Type, event.Direct.Display)
+								</td>
+							</tr>
+						}
+					</tbody>
+				</table>
+			</div>
+		}
 	}
 }

@@ -1,10 +1,12 @@
 package main
 
 import (
+	"fmt"
 	"gohan/repo"
 	"gohan/views"
 	"log"
 	"log/slog"
+	"strings"
 
 	"github.com/a-h/templ"
 	"github.com/gofiber/fiber/v2"
@@ -41,12 +43,35 @@ func HandleError(c *fiber.Ctx, err error) error {
 }
 
 func HandleHome(c *fiber.Ctx, db *sqlx.DB) error {
-	events, err := repo.ListEvents(db)
+	objectIdsParam := c.Query("object_ids", "")
+	verb := c.Query("verb", "")
+
+	objectIds := []string{}
+	if objectIdsParam != "" {
+		objectIds = strings.Split(objectIdsParam, ",")
+
+	}
+
+	selectedObjects := []repo.Object{}
+	if len(objectIds) > 0 {
+		var err error
+		selectedObjects, err = repo.GetObjectByIds(db, objectIds)
+		if err != nil {
+			return err
+		}
+		fmt.Println(selectedObjects)
+	}
+
+	events, err := repo.ListEvents(db, repo.ListFilters{
+		ObjectIDs: objectIds,
+		Verb:      verb,
+	})
 	if err != nil {
 		slog.Error("Could not list events", err)
 	}
+	fmt.Println(selectedObjects)
 
-	handler := adaptor.HTTPHandler(templ.Handler(views.Home(events)))
+	handler := adaptor.HTTPHandler(templ.Handler(views.Home(events, verb, selectedObjects)))
 	return handler(c)
 }
 

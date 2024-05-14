@@ -1,6 +1,8 @@
 package repo
 
 import (
+	"fmt"
+
 	"github.com/jmoiron/sqlx"
 )
 
@@ -29,11 +31,33 @@ func UpsertObject(db *sqlx.DB, obj UpsertObjectParams) error {
 }
 
 func GetObjectById(db *sqlx.DB, id string) (Object, error) {
-	query := "SELECT id, type, display FROM objects where id = $1"
-	obj := Object{}
-	if err := db.Get(&obj, query, id); err != nil {
-		return obj, err
+	objs, err := GetObjectByIds(db, []string{id})
+	if err != nil {
+		return Object{}, err
 	}
 
-	return obj, nil
+	return objs[0], nil
+}
+
+func GetObjectByIds(db *sqlx.DB, ids []string) ([]Object, error) {
+	objs := []Object{}
+
+	idArgs := []interface{}{}
+	for _, str := range ids {
+		idArgs = append(idArgs, str)
+	}
+
+	query := "SELECT id, type, display FROM objects where id IN (?)"
+	query, args, err := sqlx.In(query, idArgs...)
+	if err != nil {
+		return objs, err
+	}
+
+	fmt.Println(args)
+	query = db.Rebind(query)
+	if err := db.Select(&objs, query, args...); err != nil {
+		return objs, err
+	}
+
+	return objs, nil
 }

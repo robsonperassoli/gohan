@@ -1,10 +1,21 @@
 package views
 
 templ Layout() {
-	<link rel="stylesheet" href="/styles.css"/>
-	<title>Gohan</title>
-	<main>
-		{ children... }
-	</main>
-	<script src="https://unpkg.com/htmx.org@1.9.12" integrity="sha384-ujb1lZYygJmzgSwoxRggbCHcjc0rB2XoQrxeTUQyRjrOnlCoYta87iKBWq3EsdM2" crossorigin="anonymous"></script>
+	<!DOCTYPE html>
+	<html lang="en">
+		<head>
+			<meta charset="utf-8"/>
+			<title>Gohan</title>
+			<link rel="stylesheet" href="/styles.css"/>
+			<link href="https://fonts.googleapis.com" rel="preconnect"/>
+			<link href="https://fonts.gstatic.com" rel="preconnect" crossorigin="true"/>
+			<link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap" rel="stylesheet"/>
+		</head>
+		<body class="bg-gray-100 py-6">
+			<main class="mx-auto max-w-4xl" id="root">
+				{ children... }
+			</main>
+			<script src="https://unpkg.com/htmx.org@1.9.12" integrity="sha384-ujb1lZYygJmzgSwoxRggbCHcjc0rB2XoQrxeTUQyRjrOnlCoYta87iKBWq3EsdM2" crossorigin="anonymous"></script>
+		</body>
+	</html>
 }
